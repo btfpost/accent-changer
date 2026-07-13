@@ -1,0 +1,12 @@
+# Secrets — never commit these
+.env
+stripe-keys.txt
+
+# Local data
+users.db
+recordings/
+
+# Local machine artifacts
+.deps_installed
+__pycache__/
+*.pyc

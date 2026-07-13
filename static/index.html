@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accent Changer — Hear yourself with a perfect English accent</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f5f6fa; color: #1d2330; line-height: 1.55;
+  }
+  .wrap { max-width: 620px; margin: 0 auto; padding: 24px 16px 60px; }
+  .lang-row { text-align: right; }
+  .lang-row select {
+    background: #fff; border: 1px solid #cfd4e0; border-radius: 999px;
+    padding: 6px 12px; font-size: .88rem; color: #444c60; cursor: pointer;
+    appearance: auto; font-family: inherit;
+  }
+  header { text-align: center; margin: 10px 0 28px; }
+  header h1 { font-size: 1.9rem; margin-bottom: 6px; }
+  header p { color: #5a6274; }
+  .card {
+    background: #fff; border: 1px solid #e3e6ee; border-radius: 14px;
+    padding: 22px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(20,30,60,.05);
+  }
+  .card h2 { font-size: 1.15rem; margin-bottom: 10px; }
+  .card p.hint { color: #5a6274; font-size: .95rem; margin-bottom: 14px; }
+  label { display: block; font-size: .9rem; color: #444c60; margin: 10px 0 4px; }
+  input[type=email], input[type=password] {
+    width: 100%; padding: 10px 12px; border: 1px solid #cfd4e0;
+    border-radius: 8px; font-size: 1rem;
+  }
+  button {
+    appearance: none; border: 0; border-radius: 10px; cursor: pointer;
+    font-size: 1rem; font-weight: 600; padding: 12px 18px; margin-top: 14px;
+  }
+  button.primary { background: #3b5bfd; color: #fff; width: 100%; }
+  button.primary:disabled { background: #aab4d8; cursor: default; }
+  button.record { background: #e94b4b; color: #fff; width: 100%; }
+  button.record.stop { background: #333a4d; }
+  button.record:disabled { background: #c8ccd8; cursor: default; }
+  button.link { background: none; color: #3b5bfd; padding: 6px 4px; font-weight: 500; }
+  .status { margin-top: 12px; font-size: .95rem; color: #444c60; min-height: 1.3em; }
+  .status.error { color: #c0392b; }
+  .status.ok { color: #1e8e4f; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: .9rem; color: #5a6274; flex-wrap: wrap; gap: 4px; }
+  .badge { background: #eef1fb; color: #3b5bfd; border-radius: 999px; padding: 4px 12px; font-weight: 600; font-size: .85rem; }
+  audio { width: 100%; margin-top: 14px; }
+  .transcript { margin-top: 12px; background: #f5f6fa; border-radius: 8px; padding: 10px 12px; font-size: .95rem; color: #333a4d; display: none; }
+  .hidden { display: none; }
+  .timer { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .steps { display: flex; flex-direction: column; gap: 14px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .step .num {
+    flex: 0 0 34px; height: 34px; border-radius: 50%; background: #eef1fb;
+    color: #3b5bfd; font-weight: 700; display: flex; align-items: center;
+    justify-content: center; font-size: 1rem;
+  }
+  .step b { display: block; margin-bottom: 2px; }
+  .step p { color: #5a6274; font-size: .93rem; }
+  .promise { text-align: center; color: #5a6274; font-size: .9rem; margin-top: 14px; }
+  .consent-row { display: flex; gap: 8px; align-items: flex-start; font-size: .92rem; color: #444c60; margin: 4px 0 2px; cursor: pointer; }
+  .consent-row input { margin-top: 4px; }
+  .hist-item { border-top: 1px solid #eef0f6; padding: 12px 0 6px; }
+  .hist-item:first-child { border-top: 0; padding-top: 0; }
+  .hist-meta { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; color: #5a6274; }
+  .hist-meta a { color: #3b5bfd; text-decoration: none; font-weight: 600; }
+  .hist-text { font-size: .88rem; color: #5a6274; margin-top: 6px; }
+  footer { text-align: center; color: #9aa1b3; font-size: .85rem; margin-top: 30px; }
+  footer a { color: #9aa1b3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="lang-row">
+    <select id="lang-sel" aria-label="Language">
+      <option value="en">🌐 English</option>
+      <option value="ru">🌐 Русский</option>
+    </select>
+  </div>
+
+  <header>
+    <h1>🎙️ Accent Changer</h1>
+    <p id="tagline"></p>
+  </header>
+
+  <!-- ===== How it works (logged-out visitors) ===== -->
+  <div id="how" class="card hidden">
+    <h2 id="how-title"></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div><b id="s1-t"></b><p id="s1-d"></p></div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div><b id="s2-t"></b><p id="s2-d"></p></div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div><b id="s3-t"></b><p id="s3-d"></p></div>
+      </div>
+    </div>
+    <p class="promise" id="promise"></p>
+  </div>
+
+  <!-- ===== Login / Signup ===== -->
+  <div id="auth" class="card hidden">
+    <h2 id="auth-title"></h2>
+    <p class="hint" id="auth-hint"></p>
+    <label id="email-lbl" for="email"></label>
+    <input type="email" id="email" autocomplete="email">
+    <label id="pass-lbl" for="password"></label>
+    <input type="password" id="password" autocomplete="current-password">
+    <button class="primary" id="auth-btn"></button>
+    <button class="link" id="auth-toggle"></button>
+    <button class="link hidden" id="forgot"></button>
+    <div class="status" id="auth-status"></div>
+  </div>
+
+  <!-- ===== Main app ===== -->
+  <div id="app" class="hidden">
+    <div class="topbar">
+      <span id="who"></span>
+      <span><span class="badge" id="quota"></span>
+      <button class="link hidden" id="manage"></button>
+      <button class="link" id="logout"></button></span>
+    </div>
+
+    <div class="card hidden" id="sub-card">
+      <h2 id="sub-title"></h2>
+      <p class="hint" id="sub-hint"></p>
+      <button class="primary" id="sub-btn"></button>
+      <div class="status" id="sub-status"></div>
+    </div>
+
+    <div class="card" id="clone-card">
+      <h2><span id="step1-title"></span> <span id="clone-done"></span></h2>
+      <p class="hint" id="step1-hint"></p>
+      <label class="consent-row">
+        <input type="checkbox" id="consent">
+        <span id="consent-lbl"></span>
+      </label>
+      <button class="record" id="clone-rec"></button>
+      <div class="status" id="clone-status"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="step2-title"></h2>
+      <p class="hint" id="step2-hint"></p>
+      <button class="record" id="conv-rec"></button>
+      <div class="status" id="conv-status"></div>
+      <audio id="result" controls class="hidden"></audio>
+      <div class="transcript" id="transcript"></div>
+    </div>
+
+    <div class="card hidden" id="hist-card">
+      <h2 id="hist-title"></h2>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="footer-line"></span><br>
+    <a href="/privacy" id="footer-privacy"></a> ·
+    <a href="/terms" id="footer-terms"></a> ·
+    <a href="mailto:support@myaccentchanger.com">support@myaccentchanger.com</a>
+  </footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// ================= Translations =================
+const T = {
+  en: {
+    title: "Accent Changer — Hear yourself with a perfect English accent",
+    langBtn: "Русский",
+    tagline: 'Speak English your way — hear it back with perfect pronunciation, in your own voice.',
+    howTitle: "How it works",
+    s1t: "Record yourself speaking English", s1d: "Right here in your browser — nothing to install.",
+    s2t: "AI rebuilds every word in your voice", s2d: "Same words, same voice — but with clear, native-sounding pronunciation.",
+    s3t: "Listen and compare", s3d: "Hear the difference, repeat after yourself, and watch your accent improve.",
+    promise: "Your voice stays yours: it's cloned only with your consent, used only for your playback, and never shared.",
+    authTitleSignup: "Create your free account", authTitleLogin: "Welcome back",
+    authHint: "Try it free — your first 2 conversions are on us, no credit card needed.",
+    emailLbl: "Email", passLbl: "Password (8+ characters)",
+    signupBtn: "Sign up free", loginBtn: "Log in",
+    haveAcct: "I already have an account", needAcct: "I need a new account",
+    forgot: "Forgot password?",
+    forgotMsg: "No problem — email us at support@myaccentchanger.com from your account's email address and we'll reset your password.",
+    freeLeft: n => n + " free left", subscribed: "Subscribed", activating: "Activating…",
+    manage: "Manage subscription", logout: "Log out",
+    subTitle: "Keep improving — $9/month",
+    subHint: "Your free tries are used up. Subscribe for up to 300 conversions every month (that's 10 a day) — cancel anytime in two clicks.",
+    subBtn: "Subscribe — $9/month", subOpening: "Opening the secure payment page…",
+    step1Title: "Step 1 — Clone your voice",
+    step1Hint: "Speak or read aloud for 1.5–2 minutes (telling a story works even better than reading). Speak naturally, in a quiet room — this recording decides how much the result sounds like you.",
+    consentLbl: "I confirm this is my own voice and I consent to it being cloned so the app can generate speech that sounds like me.",
+    record: "● Start recording", stop: "■ Stop recording",
+    reRecord: "● Re-record my voice", cloneBtnWait: "Cloning…",
+    cloneWait: "Cloning your voice… this takes about 20 seconds.",
+    cloneDone: "Done! Your voice is cloned. Go to Step 2.",
+    cloneAlready: "Your voice is cloned. You can re-record to replace it.",
+    consentFirst: "Please tick the box confirming this is your own voice.",
+    step2Title: "Step 2 — Fix your accent",
+    step2Hint: "Record a sentence or two, then listen to yourself with a native accent.",
+    convWait: "Working on it… usually 5–10 seconds.",
+    convDone: "Here you are — with a perfect accent:",
+    youSaid: "You said: ", doStep1: "Do Step 1 first — clone your voice.",
+    micBlocked: "Microphone blocked. Allow microphone access in your browser and try again.",
+    tooShort: n => "Too short — please record at least " + n + " seconds.",
+    welcome: "Welcome aboard! Practice as much as you like. 🎉",
+    footerLine: "Your recordings are used only to create your playback and are not shared.",
+    privacyLink: "Privacy Policy", termsLink: "Terms of Service",
+    genericErr: "Something went wrong. Try again.",
+    histTitle: "My recordings", download: "Download"
+  },
+  ru: {
+    title: "Accent Changer — Услышьте себя с идеальным английским произношением",
+    langBtn: "English",
+    tagline: "Говорите по-английски как умеете — и услышьте себя с идеальным произношением, вашим собственным голосом.",
+    howTitle: "Как это работает",
+    s1t: "Запишите свою английскую речь", s1d: "Прямо в браузере — ничего устанавливать не нужно.",
+    s2t: "ИИ пересоберёт каждое слово вашим голосом", s2d: "Те же слова, тот же голос — но с чистым, естественным произношением.",
+    s3t: "Слушайте и сравнивайте", s3d: "Услышьте разницу, повторяйте за собой — и акцент будет улучшаться.",
+    promise: "Ваш голос остаётся вашим: он клонируется только с вашего согласия, используется только для вас и никому не передаётся.",
+    authTitleSignup: "Создайте бесплатный аккаунт", authTitleLogin: "С возвращением!",
+    authHint: "Попробуйте бесплатно — первые 2 преобразования за наш счёт, банковская карта не нужна.",
+    emailLbl: "Эл. почта", passLbl: "Пароль (не менее 8 символов)",
+    signupBtn: "Зарегистрироваться бесплатно", loginBtn: "Войти",
+    haveAcct: "У меня уже есть аккаунт", needAcct: "Мне нужен новый аккаунт",
+    forgot: "Забыли пароль?",
+    forgotMsg: "Ничего страшного — напишите на support@myaccentchanger.com с адреса вашего аккаунта, и мы сбросим пароль.",
+    freeLeft: n => "Осталось бесплатных: " + n, subscribed: "Подписка активна", activating: "Активируем…",
+    manage: "Управление подпиской", logout: "Выйти",
+    subTitle: "Продолжайте улучшаться — $9/мес",
+    subHint: "Бесплатные попытки закончились. Подпишитесь — до 300 преобразований каждый месяц (это 10 в день). Отменить можно в любой момент в два клика.",
+    subBtn: "Подписаться — $9/мес", subOpening: "Открываем защищённую страницу оплаты…",
+    step1Title: "Шаг 1 — Клонируйте свой голос",
+    step1Hint: "Говорите или читайте вслух по-английски 1,5–2 минуты (рассказать историю даже лучше, чем читать). Говорите естественно, в тихой комнате — от этой записи зависит, насколько результат будет похож на вас.",
+    consentLbl: "Я подтверждаю, что это мой собственный голос, и даю согласие на его клонирование, чтобы приложение могло озвучивать речь моим голосом.",
+    record: "● Начать запись", stop: "■ Остановить запись",
+    reRecord: "● Перезаписать голос", cloneBtnWait: "Клонируем…",
+    cloneWait: "Клонируем ваш голос… это займёт около 20 секунд.",
+    cloneDone: "Готово! Ваш голос клонирован. Переходите к Шагу 2.",
+    cloneAlready: "Ваш голос клонирован. Можно перезаписать, чтобы заменить.",
+    consentFirst: "Пожалуйста, отметьте галочку — подтвердите, что это ваш голос.",
+    step2Title: "Шаг 2 — Исправьте свой акцент",
+    step2Hint: "Запишите одно-два предложения по-английски и услышьте себя с правильным произношением.",
+    convWait: "Обрабатываем… обычно 5–10 секунд.",
+    convDone: "Вот и вы — с идеальным акцентом:",
+    youSaid: "Вы сказали: ", doStep1: "Сначала выполните Шаг 1 — клонируйте голос.",
+    micBlocked: "Микрофон заблокирован. Разрешите доступ к микрофону в браузере и попробуйте снова.",
+    tooShort: n => "Слишком коротко — запишите не менее " + n + " секунд.",
+    welcome: "Добро пожаловать! Занимайтесь сколько хотите. 🎉",
+    footerLine: "Ваши записи используются только для вашего воспроизведения и никому не передаются.",
+    privacyLink: "Политика конфиденциальности", termsLink: "Условия использования",
+    genericErr: "Что-то пошло не так. Попробуйте ещё раз.",
+    histTitle: "Мои записи", download: "Скачать"
+  }
+};
+
+// Russian versions of messages the server may send
+const SERVER_RU = {
+  "Please log in first.": "Сначала войдите в аккаунт.",
+  "That doesn't look like an email address.": "Это не похоже на адрес эл. почты.",
+  "Please use your regular email address — temporary email services are not supported.": "Пожалуйста, используйте ваш обычный адрес — временные почтовые сервисы не поддерживаются.",
+  "Password must be at least 8 characters.": "Пароль должен быть не короче 8 символов.",
+  "An account with this email already exists. Try logging in.": "Аккаунт с этой почтой уже существует. Попробуйте войти.",
+  "Wrong email or password.": "Неверная почта или пароль.",
+  "Your free trial is finished — subscribe below to keep going.": "Бесплатные попытки закончились — подпишитесь, чтобы продолжить.",
+  "Please confirm that this is your own voice.": "Пожалуйста, подтвердите, что это ваш собственный голос.",
+  "That recording is too short. Please record at least 1 minute.": "Запись слишком короткая. Запишите не менее 1 минуты.",
+  "Recording not found.": "Запись не найдена.",
+  "That recording is too long. Please keep it under 60 seconds.": "Запись слишком длинная. Уложитесь в 60 секунд.",
+  "That recording is too long. Please keep it under 2 minutes.": "Запись слишком длинная. Уложитесь в 2 минуты.",
+  "We couldn't clone your voice just now — please try again in a minute. If it keeps happening, email support and we'll sort it out.": "Не получилось клонировать голос — попробуйте через минуту. Если повторится, напишите в поддержку.",
+  "Clone your voice first (Step 1).": "Сначала клонируйте голос (Шаг 1).",
+  "The recording was empty. Try again.": "Запись пустая. Попробуйте ещё раз.",
+  "We couldn't process that recording — please try again in a minute.": "Не получилось обработать запись — попробуйте через минуту.",
+  "Could not hear anything. Try again.": "Ничего не расслышали. Попробуйте ещё раз.",
+  "We're a bit busy right now — your recording wasn't counted. Please try again in a minute.": "Сейчас большая нагрузка — ваша запись не была засчитана. Попробуйте через минуту.",
+  "Payments aren't switched on yet — please try again later.": "Оплата ещё не подключена — попробуйте позже.",
+  "You already have an active subscription.": "У вас уже есть активная подписка.",
+  "Could not open the payment page — please try again in a minute.": "Не удалось открыть страницу оплаты — попробуйте через минуту.",
+  "No subscription found for this account. If that seems wrong, email support.": "Подписка для этого аккаунта не найдена. Если это ошибка — напишите в поддержку.",
+  "Could not open the subscription page — please try again, or email support.": "Не удалось открыть страницу подписки — попробуйте ещё раз или напишите в поддержку.",
+  "You've reached this month's fair-use limit of 300 conversions. It resets on the 1st of next month.": "Вы достигли месячного лимита в 300 преобразований. Он обнулится 1-го числа следующего месяца."
+};
+
+let lang = localStorage.getItem("lang") || "en";
+if (!T[lang]) lang = "en";
+const t = key => T[lang][key];
+const trServer = msg => (lang === "ru" && SERVER_RU[msg]) ? SERVER_RU[msg] : msg;
+
+let me = { logged_in: false };
+let signupMode = true;
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = t("title");
+  $("lang-sel").value = lang;
+  $("tagline").textContent = t("tagline");
+  $("how-title").textContent = t("howTitle");
+  $("s1-t").textContent = t("s1t"); $("s1-d").textContent = t("s1d");
+  $("s2-t").textContent = t("s2t"); $("s2-d").textContent = t("s2d");
+  $("s3-t").textContent = t("s3t"); $("s3-d").textContent = t("s3d");
+  $("promise").textContent = t("promise");
+  $("auth-title").textContent = signupMode ? t("authTitleSignup") : t("authTitleLogin");
+  $("auth-hint").textContent = t("authHint");
+  $("email-lbl").textContent = t("emailLbl");
+  $("pass-lbl").textContent = t("passLbl");
+  $("auth-btn").textContent = signupMode ? t("signupBtn") : t("loginBtn");
+  $("auth-toggle").textContent = signupMode ? t("haveAcct") : t("needAcct");
+  $("forgot").textContent = t("forgot");
+  $("manage").textContent = t("manage");
+  $("logout").textContent = t("logout");
+  $("sub-title").textContent = t("subTitle");
+  $("sub-hint").textContent = t("subHint");
+  $("sub-btn").textContent = t("subBtn");
+  $("step1-title").textContent = t("step1Title");
+  $("step1-hint").textContent = t("step1Hint");
+  $("consent-lbl").textContent = t("consentLbl");
+  $("step2-title").textContent = t("step2Title");
+  $("step2-hint").textContent = t("step2Hint");
+  if (!$("clone-rec").classList.contains("stop") && !$("clone-rec").disabled) {
+    $("clone-rec").textContent = me.has_voice ? t("reRecord") : t("record");
+  }
+  if (!$("conv-rec").classList.contains("stop") && !$("conv-rec").disabled) {
+    $("conv-rec").textContent = t("record");
+  }
+  $("footer-line").textContent = t("footerLine");
+  $("footer-privacy").textContent = t("privacyLink");
+  $("footer-terms").textContent = t("termsLink");
+  $("hist-title").textContent = t("histTitle");
+  render();
+  loadHistory();
+}
+
+$("lang-sel").onchange = () => {
+  lang = $("lang-sel").value;
+  localStorage.setItem("lang", lang);
+  applyLang();
+};
+
+function setStatus(el, msg, kind) {
+  el.textContent = msg || "";
+  el.className = "status" + (kind ? " " + kind : "");
+}
+
+function setWorking(on) {
+  $("clone-rec").disabled = on;
+  $("conv-rec").disabled = on;
+}
+
+function render() {
+  $("how").classList.toggle("hidden", me.logged_in);
+  $("auth").classList.toggle("hidden", me.logged_in);
+  $("app").classList.toggle("hidden", !me.logged_in);
+  if (!me.logged_in) return;
+  $("who").textContent = me.email;
+  $("quota").textContent = me.subscribed ? t("subscribed") : t("freeLeft")(me.free_conversions_left);
+  $("sub-card").classList.toggle("hidden", me.subscribed || me.free_conversions_left > 0);
+  $("manage").classList.toggle("hidden", !me.subscribed);
+  $("clone-done").textContent = me.has_voice ? "✅" : "";
+  if (!$("clone-rec").classList.contains("stop") && !$("clone-rec").disabled) {
+    $("clone-rec").textContent = me.has_voice ? t("reRecord") : t("record");
+  }
+  if (me.has_voice) setStatus($("clone-status"), t("cloneAlready"), "ok");
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function loadHistory() {
+  if (!me.logged_in) return;
+  let out;
+  try { out = await api("/api/history"); } catch { return; }
+  $("hist-card").classList.toggle("hidden", out.items.length === 0);
+  $("hist-title").textContent = t("histTitle");
+  const list = $("hist-list");
+  list.innerHTML = "";
+  for (const item of out.items) {
+    const when = new Date(item.created_at.replace(" ", "T") + "Z")
+      .toLocaleString(lang === "ru" ? "ru-RU" : "en-US", { dateStyle: "medium", timeStyle: "short" });
+    const div = document.createElement("div");
+    div.className = "hist-item";
+    div.innerHTML =
+      '<div class="hist-meta"><span>' + when + '</span>' +
+      '<a href="/api/recording/' + item.id + '" download>⬇ ' + t("download") + '</a></div>' +
+      '<audio controls preload="none" src="/api/recording/' + item.id + '"></audio>' +
+      '<div class="hist-text">' + escapeHtml(item.transcript) + '</div>';
+    list.appendChild(div);
+  }
+}
+
+async function api(path, body) {
+  const res = await fetch(path, { method: body ? "POST" : "GET", body });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(trServer(data.detail || t("genericErr")));
+  return data;
+}
+
+// ---- auth ----
+$("auth-toggle").onclick = () => {
+  signupMode = !signupMode;
+  $("forgot").classList.toggle("hidden", signupMode);
+  setStatus($("auth-status"), "");
+  applyLang();
+};
+
+$("forgot").onclick = () => {
+  setStatus($("auth-status"), t("forgotMsg"));
+};
+
+$("auth-btn").onclick = async () => {
+  const fd = new FormData();
+  fd.append("email", $("email").value);
+  fd.append("password", $("password").value);
+  $("auth-btn").disabled = true;
+  try {
+    me = await api(signupMode ? "/api/signup" : "/api/login", fd);
+    $("password").value = "";
+    setStatus($("auth-status"), "");
+    render();
+    loadHistory();
+  } catch (e) {
+    setStatus($("auth-status"), e.message, "error");
+  } finally {
+    $("auth-btn").disabled = false;
+  }
+};
+
+$("logout").onclick = async () => {
+  me = await api("/api/logout", new FormData());
+  $("email").value = "";
+  $("password").value = "";
+  setStatus($("auth-status"), "");
+  render();
+};
+
+// ---- subscription ----
+$("sub-btn").onclick = async () => {
+  $("sub-btn").disabled = true;
+  setStatus($("sub-status"), t("subOpening"));
+  try {
+    const out = await api("/api/checkout", new FormData());
+    location.href = out.url;
+  } catch (e) {
+    setStatus($("sub-status"), e.message, "error");
+    $("sub-btn").disabled = false;
+  }
+};
+
+$("manage").onclick = async () => {
+  try {
+    const out = await api("/api/portal", new FormData());
+    location.href = out.url;
+  } catch (e) {
+    alert(e.message);
+  }
+};
+
+async function afterPayment() {
+  history.replaceState({}, "", "/");
+  for (let i = 0; i < 10; i++) {
+    me = await api("/api/me");
+    if (me.subscribed) break;
+    $("quota").textContent = t("activating");
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  render();
+  if (me.subscribed) setStatus($("conv-status"), t("welcome"), "ok");
+}
+
+// ---- recording helper ----
+function fmtTime(s) { return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+function makeRecorder(btn, minSeconds, maxSeconds, onDone) {
+  let mediaRecorder = null, chunks = [], startedAt = 0, timerInt = null;
+  btn.onclick = async () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      return;
+    }
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      onDone(null, t("micBlocked"));
+      return;
+    }
+    chunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      clearInterval(timerInt);
+      btn.classList.remove("stop");
+      btn.textContent = t("record");
+      const seconds = (Date.now() - startedAt) / 1000;
+      if (minSeconds && seconds < minSeconds) {
+        onDone(null, t("tooShort")(minSeconds));
+        return;
+      }
+      onDone(new Blob(chunks, { type: mediaRecorder.mimeType }), null);
+    };
+    mediaRecorder.start();
+    startedAt = Date.now();
+    btn.classList.add("stop");
+    timerInt = setInterval(() => {
+      const s = Math.floor((Date.now() - startedAt) / 1000);
+      if (s >= maxSeconds && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        return;
+      }
+      btn.innerHTML = t("stop") + ' <span class="timer">' + fmtTime(s) + " / " + fmtTime(maxSeconds) + "</span>";
+    }, 250);
+    btn.textContent = t("stop");
+  };
+}
+
+// ---- step 1: clone ----
+$("clone-rec").addEventListener("click", (e) => {
+  if (!$("consent").checked && !$("clone-rec").classList.contains("stop")) {
+    e.stopImmediatePropagation();
+    setStatus($("clone-status"), t("consentFirst"), "error");
+  }
+}, true);
+
+makeRecorder($("clone-rec"), 60, 120, async (blob, err) => {
+  const st = $("clone-status");
+  const resetLabel = () => {
+    $("clone-rec").textContent = me.has_voice ? t("reRecord") : t("record");
+  };
+  if (err) { setStatus(st, err, "error"); resetLabel(); return; }
+  setStatus(st, t("cloneWait"));
+  setWorking(true);
+  $("clone-rec").textContent = t("cloneBtnWait");
+  const fd = new FormData();
+  fd.append("audio", blob, "sample.webm");
+  fd.append("consent", "yes");
+  try {
+    me = await api("/api/clone", fd);
+    render();
+    setStatus(st, t("cloneDone"), "ok");
+  } catch (e) {
+    setStatus(st, e.message, "error");
+  } finally {
+    setWorking(false);
+    resetLabel();
+  }
+});
+
+// ---- step 2: convert ----
+makeRecorder($("conv-rec"), 0, 60, async (blob, err) => {
+  const st = $("conv-status");
+  if (err) return setStatus(st, err, "error");
+  if (!me.has_voice) return setStatus(st, t("doStep1"), "error");
+  setStatus(st, t("convWait"));
+  setWorking(true);
+  const fd = new FormData();
+  fd.append("audio", blob, "speech.webm");
+  try {
+    const out = await api("/api/convert", fd);
+    me = out.me; render();
+    $("transcript").textContent = t("youSaid") + '"' + out.transcript + '"';
+    $("transcript").style.display = "block";
+    const player = $("result");
+    player.src = "data:audio/mpeg;base64," + out.audio_b64;
+    player.classList.remove("hidden");
+    player.play();
+    setStatus(st, t("convDone"), "ok");
+    player.scrollIntoView({ behavior: "smooth", block: "center" });
+    loadHistory();
+  } catch (e) {
+    setStatus(st, e.message, "error");
+  } finally {
+    setWorking(false);
+  }
+});
+
+// ---- boot ----
+applyLang();
+(async () => {
+  me = await api("/api/me");
+  render();
+  loadHistory();
+  if (new URLSearchParams(location.search).has("paid") && me.logged_in) await afterPayment();
+})();
+</script>
+</body>
+</html>

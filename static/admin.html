@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Accent Changer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #f5f6fa; color: #1d2330; padding: 24px 12px 60px; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .sub { color: #5a6274; font-size: .9rem; margin-bottom: 20px; }
+  .table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e3e6ee; border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #eef0f6; white-space: nowrap; }
+  th { background: #f8f9fc; color: #5a6274; font-weight: 600; position: sticky; top: 0; }
+  tr:last-child td { border-bottom: 0; }
+  .pill { border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 600; }
+  .pill.sub { background: #e7f6ee; color: #1e8e4f; }
+  .pill.trial { background: #eef1fb; color: #3b5bfd; }
+  .pill.out { background: #fdeeee; color: #c0392b; }
+  button { border: 0; border-radius: 8px; padding: 6px 10px; font-size: .82rem; font-weight: 600; cursor: pointer; margin-right: 6px; background: #eef1fb; color: #3b5bfd; }
+  button:hover { background: #e0e6fb; }
+  #msg { margin: 14px 0; font-size: .92rem; color: #1e8e4f; min-height: 1.2em; }
+  #msg.error { color: #c0392b; }
+  a.back { color: #3b5bfd; font-size: .9rem; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>👑 Admin</h1>
+  <p class="sub">Visible only to you. Users: <span id="count">…</span> &nbsp;·&nbsp; <a class="back" href="/">← back to the app</a></p>
+  <div id="msg"></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Email</th><th>Signed up (UTC)</th><th>Status</th><th>Used</th><th>Voice</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function msg(text, isError) {
+  $("msg").textContent = text;
+  $("msg").className = isError ? "error" : "";
+}
+
+async function post(path, userId) {
+  const fd = new FormData();
+  fd.append("user_id", userId);
+  const res = await fetch(path, { method: "POST", body: fd });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || "Failed");
+  return data;
+}
+
+async function load() {
+  const res = await fetch("/api/admin/users");
+  if (!res.ok) { document.body.innerHTML = "Not found."; return; }
+  const data = await res.json();
+  $("count").textContent = data.users.length;
+  const tbody = $("rows");
+  tbody.innerHTML = "";
+  for (const u of data.users) {
+    const status = u.is_subscribed
+      ? '<span class="pill sub">subscribed</span>'
+      : (u.conversions_used >= u.trial_limit ? '<span class="pill out">trial over</span>' : '<span class="pill trial">trial</span>');
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + u.id + "</td>" +
+      "<td>" + u.email + "</td>" +
+      "<td>" + u.created_at + "</td>" +
+      "<td>" + status + "</td>" +
+      "<td>" + u.conversions_used + " / " + u.trial_limit + "</td>" +
+      "<td>" + (u.has_voice ? "✅" : "—") + "</td>" +
+      "<td>" +
+        '<button data-act="reset" data-id="' + u.id + '">Reset trial</button>' +
+        '<button data-act="pass" data-id="' + u.id + '">New password</button>' +
+        '<button data-act="sub" data-id="' + u.id + '">' + (u.is_subscribed ? "Remove sub" : "Gift sub") + "</button>" +
+      "</td>";
+    tbody.appendChild(tr);
+  }
+}
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-act]");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  try {
+    if (btn.dataset.act === "reset") {
+      await post("/api/admin/reset-trial", id);
+      msg("Trial reset for user #" + id + ".");
+    } else if (btn.dataset.act === "pass") {
+      const out = await post("/api/admin/set-password", id);
+      msg("New password for user #" + id + ": " + out.password + " — copy it now, it won't be shown again.");
+    } else if (btn.dataset.act === "sub") {
+      await post("/api/admin/toggle-sub", id);
+      msg("Subscription toggled for user #" + id + ". Note: real Stripe events can overwrite this.");
+    }
+    load();
+  } catch (err) {
+    msg(err.message, true);
+  }
+});
+
+load();
+</script>
+</body>
+</html>

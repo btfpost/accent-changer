@@ -1,0 +1,5 @@
+.env
+users.db
+.deps_installed
+__pycache__/
+run.bat
