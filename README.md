@@ -1,4 +1,6 @@
-# 🎙️ Accent Changer
+<img src="static/logo.svg" width="80" alt="Accent Changer logo">
+
+# Accent Changer
 
 **Live at [myaccentchanger.com](https://myaccentchanger.com)**
 

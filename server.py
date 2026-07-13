@@ -210,6 +210,26 @@ def index():
     return FileResponse(BASE_DIR / "static" / "index.html")
 
 
+@app.get("/logo.svg")
+def logo():
+    return FileResponse(BASE_DIR / "static" / "logo.svg", media_type="image/svg+xml")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse(BASE_DIR / "static" / "favicon-32.png", media_type="image/png")
+
+
+@app.get("/apple-touch-icon.png")
+def apple_touch_icon():
+    return FileResponse(BASE_DIR / "static" / "apple-touch-icon.png", media_type="image/png")
+
+
+@app.get("/icon-512.png")
+def icon_512():
+    return FileResponse(BASE_DIR / "static" / "icon-512.png", media_type="image/png")
+
+
 @app.get("/privacy")
 def privacy():
     return FileResponse(BASE_DIR / "static" / "privacy.html")
