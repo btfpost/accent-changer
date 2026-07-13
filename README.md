@@ -1,4 +1,4 @@
-<img src="static/logo.svg" width="80" alt="Accent Changer logo">
+<img src="static/icon-512.png" width="80" alt="Accent Changer logo">
 
 # Accent Changer
 

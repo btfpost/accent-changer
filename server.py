@@ -210,11 +210,6 @@ def index():
     return FileResponse(BASE_DIR / "static" / "index.html")
 
 
-@app.get("/logo.svg")
-def logo():
-    return FileResponse(BASE_DIR / "static" / "logo.svg", media_type="image/svg+xml")
-
-
 @app.get("/favicon.ico")
 def favicon():
     return FileResponse(BASE_DIR / "static" / "favicon-32.png", media_type="image/png")
