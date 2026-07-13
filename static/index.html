@@ -37,6 +37,13 @@
   }
   button.primary { background: #3b5bfd; color: #fff; width: 100%; }
   button.primary:disabled { background: #aab4d8; cursor: default; }
+  button.primary.login-mode { background: #333a4d; }
+  .auth-tabs { display: flex; background: #eef1fb; border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 16px; }
+  .auth-tabs button {
+    flex: 1; margin: 0; padding: 9px 6px; border-radius: 8px; font-size: .95rem;
+    background: transparent; color: #5a6274; font-weight: 600;
+  }
+  .auth-tabs button.active { background: #fff; color: #3b5bfd; box-shadow: 0 1px 3px rgba(20,30,60,.12); }
   button.record { background: #e94b4b; color: #fff; width: 100%; }
   button.record.stop { background: #333a4d; }
   button.record:disabled { background: #c8ccd8; cursor: default; }
@@ -107,6 +114,10 @@
 
   <!-- ===== Login / Signup ===== -->
   <div id="auth" class="card hidden">
+    <div class="auth-tabs">
+      <button id="tab-signup" type="button"></button>
+      <button id="tab-login" type="button"></button>
+    </div>
     <h2 id="auth-title"></h2>
     <p class="hint" id="auth-hint"></p>
     <label id="email-lbl" for="email"></label>
@@ -114,7 +125,6 @@
     <label id="pass-lbl" for="password"></label>
     <input type="password" id="password" autocomplete="current-password">
     <button class="primary" id="auth-btn"></button>
-    <button class="link" id="auth-toggle"></button>
     <button class="link hidden" id="forgot"></button>
     <div class="status" id="auth-status"></div>
   </div>
@@ -187,7 +197,7 @@ const T = {
     authHint: "Try it free — your first 2 conversions are on us, no credit card needed.",
     emailLbl: "Email", passLbl: "Password (8+ characters)",
     signupBtn: "Sign up free", loginBtn: "Log in",
-    haveAcct: "I already have an account", needAcct: "I need a new account",
+    tabSignup: "New here", tabLogin: "I have an account",
     forgot: "Forgot password?",
     forgotMsg: "No problem — email us at support@myaccentchanger.com from your account's email address and we'll reset your password.",
     freeLeft: n => n + " free left", subscribed: "Subscribed", activating: "Activating…",
@@ -230,7 +240,7 @@ const T = {
     authHint: "Попробуйте бесплатно — первые 2 преобразования за наш счёт, банковская карта не нужна.",
     emailLbl: "Эл. почта", passLbl: "Пароль (не менее 8 символов)",
     signupBtn: "Зарегистрироваться бесплатно", loginBtn: "Войти",
-    haveAcct: "У меня уже есть аккаунт", needAcct: "Мне нужен новый аккаунт",
+    tabSignup: "Я здесь впервые", tabLogin: "У меня есть аккаунт",
     forgot: "Забыли пароль?",
     forgotMsg: "Ничего страшного — напишите на support@myaccentchanger.com с адреса вашего аккаунта, и мы сбросим пароль.",
     freeLeft: n => "Осталось бесплатных: " + n, subscribed: "Подписка активна", activating: "Активируем…",
@@ -308,13 +318,20 @@ function applyLang() {
   $("s2-t").textContent = t("s2t"); $("s2-d").textContent = t("s2d");
   $("s3-t").textContent = t("s3t"); $("s3-d").textContent = t("s3d");
   $("promise").textContent = t("promise");
+  $("tab-signup").textContent = t("tabSignup");
+  $("tab-login").textContent = t("tabLogin");
+  $("tab-signup").classList.toggle("active", signupMode);
+  $("tab-login").classList.toggle("active", !signupMode);
   $("auth-title").textContent = signupMode ? t("authTitleSignup") : t("authTitleLogin");
   $("auth-hint").textContent = t("authHint");
+  $("auth-hint").style.display = signupMode ? "" : "none";
   $("email-lbl").textContent = t("emailLbl");
   $("pass-lbl").textContent = t("passLbl");
   $("auth-btn").textContent = signupMode ? t("signupBtn") : t("loginBtn");
-  $("auth-toggle").textContent = signupMode ? t("haveAcct") : t("needAcct");
+  $("auth-btn").classList.toggle("login-mode", !signupMode);
+  $("password").setAttribute("autocomplete", signupMode ? "new-password" : "current-password");
   $("forgot").textContent = t("forgot");
+  $("forgot").classList.toggle("hidden", signupMode);
   $("manage").textContent = t("manage");
   $("logout").textContent = t("logout");
   $("sub-title").textContent = t("subTitle");
@@ -405,12 +422,13 @@ async function api(path, body) {
 }
 
 // ---- auth ----
-$("auth-toggle").onclick = () => {
-  signupMode = !signupMode;
-  $("forgot").classList.toggle("hidden", signupMode);
+function setAuthMode(isSignup) {
+  signupMode = isSignup;
   setStatus($("auth-status"), "");
   applyLang();
-};
+}
+$("tab-signup").onclick = () => setAuthMode(true);
+$("tab-login").onclick = () => setAuthMode(false);
 
 $("forgot").onclick = () => {
   setStatus($("auth-status"), t("forgotMsg"));
